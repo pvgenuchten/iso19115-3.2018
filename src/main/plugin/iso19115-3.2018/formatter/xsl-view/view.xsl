@@ -57,6 +57,7 @@
   <xsl:include href="../../layout/evaluate.xsl"/>
   <xsl:include href="../../layout/utility-tpl-multilingual.xsl"/>
   <xsl:include href="../../layout/utility-fn.xsl"/>
+  <xsl:include href="../../formatter/jsonld/iso19115-3-to-jsonld.xsl"/>
 
   <!-- The core formatter XSL layout based on the editor configuration -->
   <xsl:include href="sharedFormatterDir/xslt/render-layout.xsl"/>
@@ -122,10 +123,7 @@
 
 
   <xsl:template mode="getMetadataHeader" match="mdb:MD_Metadata">
-    <div class="alert alert-info"
-        itemprop="description"
-        itemscope="itemscope"
-        itemtype="http://schema.org/description">
+    <div class="alert alert-info">
       <xsl:for-each select="mdb:identificationInfo/*/mri:abstract">
         <xsl:call-template name="get-iso19115-3.2018-localised">
           <xsl:with-param name="langId" select="$langId"/>
@@ -133,6 +131,13 @@
       </xsl:for-each>
     </div>
 
+
+    <xsl:if test="$withJsonLd = 'true'">
+      <script type="application/ld+json">
+        <xsl:apply-templates mode="getJsonLD"
+                             select="$metadata"/>
+      </script>
+    </xsl:if>
 
     <!-- Citation -->
     <table class="table">
@@ -191,9 +196,7 @@
           <!-- Link -->
           <xsl:variable name="url"
                         select="concat($nodeUrl, 'api/records/', $metadataUuid)"/>
-          <a itemprop="url"
-              itemscope="itemscope"
-              itemtype="http://schema.org/url" href="{url}">
+          <a href="{url}">
             <xsl:value-of select="$url"/>
           </a>
         </td>
@@ -356,9 +359,7 @@
       <div class="row">
         <div class="col-md-6">
           <!-- Needs improvements as contact/org are more flexible in iso19115-3.2018 -->
-          <address itemprop="author"
-                   itemscope="itemscope"
-                   itemtype="http://schema.org/Organization">
+          <address>
             <strong>
               <xsl:choose>
                 <xsl:when test="normalize-space($email) != ''">
@@ -375,9 +376,7 @@
               <xsl:for-each select="cit:address/*/(
                                           cit:deliveryPoint|cit:city|
                                           cit:administrativeArea|cit:postalCode|cit:country)">
-                <div itemprop="address"
-                      itemscope="itemscope"
-                      itemtype="http://schema.org/PostalAddress">
+                <div>
                   <xsl:if test="normalize-space(.) != ''">
                     <xsl:apply-templates mode="render-value" select="."/><br/>
                   </xsl:if>
@@ -390,11 +389,7 @@
           <xsl:for-each select="*//cit:contactInfo/*">
             <address>
               <xsl:for-each select="cit:phone/*/cit:voice[normalize-space(.) != '']">
-                <div itemprop="contactPoint"
-                      itemscope="itemscope"
-                      itemtype="http://schema.org/ContactPoint">
-                  <meta itemprop="contactType"
-                        content="{ancestor::cit:Responsibility/*/cit:role/*/@codeListValue}"/>
+                <div>
                   <xsl:variable name="phoneNumber">
                     <xsl:apply-templates mode="render-value" select="."/>
                   </xsl:variable>
@@ -425,12 +420,8 @@
                 </a>
               </xsl:for-each>
               <xsl:for-each select="cit:hoursOfService">
-                <span itemprop="hoursAvailable"
-                      itemscope="itemscope"
-                      itemtype="http://schema.org/OpeningHoursSpecification">
                   <xsl:apply-templates mode="render-field"
                                        select="."/>
-                </span>
               </xsl:for-each>
               <xsl:apply-templates mode="render-field"
                                    select="cit:contactInstructions"/>
@@ -445,10 +436,7 @@
   <xsl:template mode="render-field"
                 match="mdb:metadataIdentifier/mcc:MD_Identifier/mcc:code"
                 priority="100">
-    <dl class="gn-link"
-        itemprop="distribution"
-        itemscope="itemscope"
-        itemtype="http://schema.org/DataDownload">
+    <dl class="gn-link">
       <dt>
         <xsl:value-of select="tr:node-label(tr:create($schema), name(), null)"/>
       </dt>
